@@ -391,21 +391,111 @@
             startTimer();
         }
 
-        function initGame() {
-            createDragItems();
-            updateHearts();
-            
-            const dropZones = document.querySelectorAll('.drop-zone');
-            dropZones.forEach(zone => {
-                zone.addEventListener('dragover', handleDragOver);
-                zone.addEventListener('dragleave', handleDragLeave);
-                zone.addEventListener('drop', handleDrop);
+        function handleTouchStart(e) {
+    const touch = e.touches[0];
+    const target = e.target;
+
+    if (target.classList.contains('drag-item')) {
+        e.preventDefault();
+        target.classList.add('dragging');
+        target.style.position = 'absolute';
+        target.style.zIndex = '1000';
+
+        target.style.left = `${touch.clientX - target.offsetWidth / 2}px`;
+        target.style.top = `${touch.clientY - target.offsetHeight / 2}px`;
+
+        document.addEventListener('touchmove', handleTouchMove);
+        document.addEventListener('touchend', handleTouchEnd);
+    }
+}
+
+function handleTouchMove(e) {
+    const touch = e.touches[0];
+    const draggingItem = document.querySelector('.drag-item.dragging');
+
+    if (draggingItem) {
+        draggingItem.style.left = `${touch.clientX - draggingItem.offsetWidth / 2}px`;
+        draggingItem.style.top = `${touch.clientY - draggingItem.offsetHeight / 2}px`;
+    }
+}
+
+        function handleTouchEnd(e) {
+            const draggingItem = document.querySelector('.drag-item.dragging');
+            if (draggingItem) {
+                draggingItem.classList.remove('dragging');
+
+                const dropZones = document.querySelectorAll('.drop-zone');
+                let droppedInZone = false;
+
+                dropZones.forEach(zone => {
+                    const zoneRect = zone.getBoundingClientRect();
+                    const itemRect = draggingItem.getBoundingClientRect();
+
+                    if (
+                        itemRect.left > zoneRect.left &&
+                        itemRect.right < zoneRect.right &&
+                        itemRect.top > zoneRect.top &&
+                        itemRect.bottom < zoneRect.bottom
+                    ) {
+                if (zone.dataset.type === draggingItem.dataset.type) {
+                    zone.appendChild(draggingItem);
+                    draggingItem.classList.add('correct');
+                    score++;
+                } else {
+                    draggingItem.classList.add('incorrect');
+                    hearts--;
+                    updateHearts();
+                }
+                droppedInZone = true;
+                }
             });
-            
-            startTimer();
+
+                if (!droppedInZone) {
+                    document.getElementById('dragItems').appendChild(draggingItem);
+                }
+
+        draggingItem.style.position = 'static';
+        draggingItem.style.zIndex = 'auto';
+
+        if (hearts <= 0) {
+            setTimeout(showResult, 500);
+            clearInterval(timer);
         }
 
-        initGame();
+        if (placedItems === items.length) {
+            setTimeout(showResult, 500);
+            clearInterval(timer);
+        }
+
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+    }
+}
+
+        function initTouchSupport() {
+            const dragItems = document.querySelectorAll('.drag-item');
+            dragItems.forEach(item => {
+                item.addEventListener('touchstart', handleTouchStart);
+            });
+        }
+
+
+        function initGame() {
+        createDragItems();
+        updateHearts();
+
+        const dropZones = document.querySelectorAll('.drop-zone');
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('dragleave', handleDragLeave);
+            zone.addEventListener('drop', handleDrop);
+    });
+
+    initTouchSupport();
+
+    startTimer();
+}
+
     </script>
 </body>
 </html>
