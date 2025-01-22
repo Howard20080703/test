@@ -391,111 +391,111 @@
             startTimer();
         }
 
-        function handleTouchStart(e) {
-    const touch = e.touches[0];
-    const target = e.target;
+        function initGame() {
+            createDragItems();
+            updateHearts();
+            
+            const dropZones = document.querySelectorAll('.drop-zone');
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('dragleave', handleDragLeave);
+                zone.addEventListener('drop', handleDrop);
+            });
+            
+            startTimer();
+        }
 
-    if (target.classList.contains('drag-item')) {
-        e.preventDefault();
-        target.classList.add('dragging');
-        target.style.position = 'absolute';
-        target.style.zIndex = '1000';
+    function handleTouchStart(e) {
+        const touch = e.touches[0];
+        const item = e.target;
 
-        target.style.left = `${touch.clientX - target.offsetWidth / 2}px`;
-        target.style.top = `${touch.clientY - target.offsetHeight / 2}px`;
-
-        document.addEventListener('touchmove', handleTouchMove);
-        document.addEventListener('touchend', handleTouchEnd);
+        if (item.classList.contains('drag-item')) {
+            item.classList.add('dragging');
+            item.dataset.touchX = touch.clientX;
+            item.dataset.touchY = touch.clientY;
+        }
     }
-}
 
-function handleTouchMove(e) {
-    const touch = e.touches[0];
-    const draggingItem = document.querySelector('.drag-item.dragging');
+    function handleTouchMove(e) {
+        const touch = e.touches[0];
+        const item = document.querySelector('.drag-item.dragging');
 
-    if (draggingItem) {
-        draggingItem.style.left = `${touch.clientX - draggingItem.offsetWidth / 2}px`;
-        draggingItem.style.top = `${touch.clientY - draggingItem.offsetHeight / 2}px`;
+        if (item) {
+            const deltaX = touch.clientX - item.dataset.touchX;
+            const deltaY = touch.clientY - item.dataset.touchY;
+
+            item.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            e.preventDefault(); // 阻止畫面滾動
+        }
     }
-}
 
-        function handleTouchEnd(e) {
-            const draggingItem = document.querySelector('.drag-item.dragging');
-            if (draggingItem) {
-                draggingItem.classList.remove('dragging');
+    function handleTouchEnd(e) {
+        const item = document.querySelector('.drag-item.dragging');
 
-                const dropZones = document.querySelectorAll('.drop-zone');
-                let droppedInZone = false;
+        if (item) {
+            item.classList.remove('dragging');
+            item.style.transform = '';
 
-                dropZones.forEach(zone => {
-                    const zoneRect = zone.getBoundingClientRect();
-                    const itemRect = draggingItem.getBoundingClientRect();
+            const touch = e.changedTouches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
 
-                    if (
-                        itemRect.left > zoneRect.left &&
-                        itemRect.right < zoneRect.right &&
-                        itemRect.top > zoneRect.top &&
-                        itemRect.bottom < zoneRect.bottom
-                    ) {
-                if (zone.dataset.type === draggingItem.dataset.type) {
-                    zone.appendChild(draggingItem);
-                    draggingItem.classList.add('correct');
+            if (element && element.classList.contains('drop-zone')) {
+                const dropZone = element;
+                const itemType = item.dataset.type;
+
+                if (dropZone.dataset.type === itemType) {
+                    dropZone.appendChild(item);
+                    item.draggable = false;
+                    item.classList.add('correct');
                     score++;
                 } else {
-                    draggingItem.classList.add('incorrect');
+                    item.classList.add('incorrect');
                     hearts--;
                     updateHearts();
                 }
-                droppedInZone = true;
-                }
-            });
+                placedItems++;
+            }
 
-                if (!droppedInZone) {
-                    document.getElementById('dragItems').appendChild(draggingItem);
-                }
+            if (hearts <= 0 || placedItems === items.length) {
+                showResult();
+                clearInterval(timer);
+            }
 
-        draggingItem.style.position = 'static';
-        draggingItem.style.zIndex = 'auto';
-
-        if (hearts <= 0) {
-            setTimeout(showResult, 500);
-            clearInterval(timer);
+            document.getElementById('score').textContent = score;
         }
-
-        if (placedItems === items.length) {
-            setTimeout(showResult, 500);
-            clearInterval(timer);
-        }
-
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
     }
-}
 
-        function initTouchSupport() {
-            const dragItems = document.querySelectorAll('.drag-item');
-            dragItems.forEach(item => {
-                item.addEventListener('touchstart', handleTouchStart);
-            });
-        }
+    function initTouchEvents() {
+        const dragItems = document.querySelectorAll('.drag-item');
 
+        dragItems.forEach(item => {
+            item.addEventListener('touchstart', handleTouchStart);
+            item.addEventListener('touchmove', handleTouchMove);
+            item.addEventListener('touchend', handleTouchEnd);
+        });
+    }
 
-        function initGame() {
-        createDragItems();
-        updateHearts();
+    function createDragItems() {
+        const dragItems = document.getElementById('dragItems');
+        dragItems.innerHTML = '';
+        shuffle([...items]).forEach(item => {
+            const dragItem = document.createElement('div');
+            dragItem.className = 'drag-item';
+            dragItem.draggable = true;
+            dragItem.textContent = item.text;
+            dragItem.dataset.type = item.type;
 
-        const dropZones = document.querySelectorAll('.drop-zone');
-        dropZones.forEach(zone => {
-            zone.addEventListener('dragover', handleDragOver);
-            zone.addEventListener('dragleave', handleDragLeave);
-            zone.addEventListener('drop', handleDrop);
-    });
+            dragItem.addEventListener('dragstart', handleDragStart);
+            dragItem.addEventListener('dragend', handleDragEnd);
 
-    initTouchSupport();
+            dragItems.appendChild(dragItem);
+        });
 
-    startTimer();
-}
+        // 新增觸控事件處理
+        initTouchEvents();
+    }
 
+    initGame();
     </script>
 </body>
 </html>
