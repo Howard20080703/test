@@ -144,6 +144,7 @@
             border: none;
             border-radius: 5px;
             transition: transform 0.2s;
+            z-index: 10;
         }
         
         button:hover {
@@ -240,8 +241,8 @@
         <div id="feedback" class="feedback"></div>
     </div>
     <div class="controls">
-        <button onclick="makeChoice('left')" id="leftBtn">← 往左</button>
-        <button onclick="makeChoice('right')" id="rightBtn">往右 →</button>
+        <button onclick="makeChoice('left')" ontouchstart="makeChoice('left')" id="leftBtn">← 往左</button>
+        <button onclick="makeChoice('right')" ontouchstart="makeChoice('right')" id="rightBtn">往右 →</button>
     </div>
     <div class="score" id="score">得分: 0</div>
 
@@ -289,8 +290,8 @@
         const feedbackElement = document.getElementById('feedback');
 
         // 添加觸控支援
-        document.addEventListener('touchstart', function(e) {
-            e.preventDefault();
+        document.querySelector('.game-area').addEventListener('touchstart', function(e) {
+        e.preventDefault();
         }, {passive: false});
 
         function showFeedback(isCorrect) {
